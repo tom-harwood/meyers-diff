@@ -42,8 +42,8 @@ class Main
 
         if (!quiet) {
             if (patch) {
-                System.out.printf("Index: %s\n", filename1);
-                System.out.printf("--- %s\n", filename2);
+                System.out.printf("--- %s\n", filename1);
+                System.out.printf("+++ %s\n", filename2);
             }
 
             for (Edit<String> e: edits) {

@@ -142,7 +142,6 @@ public class MyersDiff<T>
             this.x = x;
             this.y = y;
             this.lastPath = type == Type.Diff? lastPath.findSnake(): lastPath;
-            //this.lastPath = lastPath;
             this.type = type;
         }
 
