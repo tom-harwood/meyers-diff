@@ -1,0 +1,106 @@
+<project name="MeyersDiff" default="cleanBuildAndTest" basedir=".">
+
+    <target name="init">
+        <!-- Load the properties from 
+           $HOME/ant.properties. 
+           Please do not change any properties here. 
+        -->
+        <property file="${user.home}/ant.properties" />
+        <property file="build.properties" />
+    
+        <!-- Intra-project directory configuration -->
+        <property name="src.dir" value="./src" />
+        <property name="gensrc.dir" value="./gensrc" />
+        <property name="classes.dir" value="./classes" />
+        <property name="lib.dir" value="./lib" />
+        <property name="diff.version.dir" value="${gensrc.dir}/diff/version" />
+        <property name="diff.dir" value="${src.dir}/java" />
+        <property name="junit.log.dir" value="./log" />
+
+        <!-- Target settings -->
+        <property name="jar.file" value="Diff.jar" />
+        <property name="debug.symbols" value="yes"/>
+        
+    </target>
+
+    <target name="cleanBuildAndTest" depends="clean,jar,test"/>
+
+    <target name="clean" depends="init">
+        <!-- Remove VIM backup files.  -->
+        <delete>
+            <fileset dir="${basedir}" includes="**/*.*~" defaultexcludes="no"/>
+        </delete>
+            
+        <delete dir="${classes.dir}" />            
+        <delete dir="${diff.version.dir}" /> 
+    </target>
+
+    <target name="help">
+    <echo>
+cleanBuildAndTest - clean, build, and test
+test - run all tests
+    </echo>
+    </target>
+
+    <available file=".git" type="dir" property="git.present"/>
+
+    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--tags"/>
+            <arg value="--always"/>
+            <arg value="HEAD"/>
+        </exec>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+    </target>
+    
+    <target name="jar" depends="git.revision,compile">
+        <mkdir dir="${lib.dir}" />        
+        <jar jarfile="${lib.dir}/${jar.file}">
+            <fileset dir="${classes.dir}"/>
+            <manifest>
+                <attribute name="Main-Class" value="diff.Main"/>
+                <attribute name="Implementation-Version" value="${git.revision}"/>
+            </manifest>
+            </jar>
+    </target>
+
+	<!-- Compile Diff -->
+	<target name="compile" depends="init"
+                        description="Build and compile source files">
+		<mkdir dir="${diff.version.dir}" />
+		<mkdir dir="${classes.dir}" />
+
+		<echo message="Setting Diff version ${git.revision}."/>
+		<echo file="${diff.version.dir}/DiffVersion.java">
+		package diff.version;
+		public interface DiffVersion {
+		    public static final String version="${git.revision}";
+		}
+		</echo>
+
+		<javac 
+			debug="${debug.symbols}" 
+			destdir="${classes.dir}"
+            includes="**/*.java"
+			>
+            <compilerarg value="-Xlint:unchecked"/>
+			<src path="${diff.dir}"/>
+			<src path="${gensrc.dir}"/>
+		</javac>
+	</target>
+
+    <target name="test" depends="init">
+        <java fork="true" jar="lib/${jar.file}">
+            <jvmarg value="-ea"/>
+            <arg value="testdata/foo.txt"/>
+            <arg value="testdata/bar.txt"/>
+        </java>
+    </target>
+
+</project>
